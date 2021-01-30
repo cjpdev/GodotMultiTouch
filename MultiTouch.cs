@@ -133,7 +133,7 @@ public class MultiTouch : Node2D
 
             Vector2 infoPos = (touches[0] + touches[0]) / 2;
 
-            line2D.Visible = false;
+            line2D.Visible = true;
             label2.SetPosition(infoPos);
             label2.Text = "Distance =" + distanceTo;
 
