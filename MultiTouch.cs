@@ -45,13 +45,18 @@ public class MultiTouch : Node2D
     {
         label1 = GetNode<Label>("Label1");
         label2 = GetNode<Label>("Label2");
-      
+        
+        label1.Text ="";
+        label2.Text ="";
+        
         touches[0] = new Vector2();
         touches[1] = new Vector2();
   
         colorRectFinger[0] =  GetNode<ColorRect>("ColorRectFinger1");
         colorRectFinger[1] =  GetNode<ColorRect>("ColorRectFinger2");
 
+        line2D.DefaultColor = Colors.Red;
+        line2D.Width = 8;
         line2D.AddPoint( new Vector2(0,0));
         line2D.AddPoint( new Vector2(0,0));
         line2D.Visible = false;
