@@ -1,6 +1,6 @@
 /**
 *
-	Copyright (c) 2020 Chay Palton
+	Copyright (c) 2020 - 2021 Chay Palton
 
 	Permission is hereby granted, free of charge, to any person obtaining
 	a copy of this software and associated documentation files (the "Software"),
@@ -45,19 +45,18 @@ public class MultiTouch : Node2D
     {
         label1 = GetNode<Label>("Label1");
         label2 = GetNode<Label>("Label2");
-
+      
         touches[0] = new Vector2();
         touches[1] = new Vector2();
   
         colorRectFinger[0] =  GetNode<ColorRect>("ColorRectFinger1");
         colorRectFinger[1] =  GetNode<ColorRect>("ColorRectFinger2");
 
-        line2D.DefaultColor  = Colors.Red;
         line2D.AddPoint( new Vector2(0,0));
         line2D.AddPoint( new Vector2(0,0));
         line2D.Visible = false;
 
-        AddChild(line2D);
+        AddChildBelowNode(label1,line2D);
     }
 
     // Handle inputs ( make sure settings emulate touch is set.)
@@ -128,10 +127,10 @@ public class MultiTouch : Node2D
             line2D.Visible = true;
             line2D.SetPointPosition(0, touches[0]);
             line2D.SetPointPosition(1, touches[1]);
-
+        
             distanceTo = touches[0].DistanceTo( touches[1]);
 
-            Vector2 infoPos = (touches[0] + touches[0]) / 2;
+            Vector2 infoPos = (touches[0] + touches[1]) / 2;
 
             label2.Visible = true;
             label2.SetPosition(infoPos);
