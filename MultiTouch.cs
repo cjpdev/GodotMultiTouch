@@ -49,6 +49,10 @@ public class MultiTouch : Node2D
     // filter out noise.
     [Export]
     float touchResolution = 2;
+    [Export]
+    float maxScale = 2;
+    [Export]
+    float minScale = 0.2f;
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
@@ -79,19 +83,24 @@ public class MultiTouch : Node2D
         AddChildBelowNode(label1,line2D);
     }
 
-    public float zoom = 0;
-
     public void CalculateZoom(bool zoomIn, float diff)
     {
+        float scale = 0;
+        float zoomFactor = 0.02f;
+        Vector2 vector = new Vector2();
+    
         if(zoomIn)
         {
-            zoom += 0.05f;
+            scale = colorRect.RectScale.x - zoomFactor;
         } else {
-            zoom -= 0.05f;
+            scale = colorRect.RectScale.x + zoomFactor;
         }
 
-        colorRect.RectScale = new Vector2(zoom, zoom);
-        label3.Text = "Zoom direction: " + ((zoomIn)?"IN":"OUT") + " : scale" + diff;
+        scale = Mathf.Clamp(scale, minScale , maxScale);
+
+        colorRect.RectScale = new Vector2(scale,scale);
+
+        label3.Text = "Zoom direction: " + ((zoomIn)?"IN":"OUT") + " : scale" + vector;
     }
 
     // Handle inputs ( make sure settings emulate touch is set.)
