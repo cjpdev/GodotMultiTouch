@@ -122,9 +122,9 @@ public class MultiTouch : Node2D
             /*
              * Only handle two touches, but also allow this 
              * code to work on Desktop (Windows) where only
-             * touchEvent.Index 0-1 touch well be allowed. So efectivly
+             * touchEvent.Index 0-1 touch well be allowed. So effectively
              * one touch at a time.
-             * Because Godot does not work well with Windows multi-touch. 
+             * Godot does not work well with Windows multi-touch (So mulit touch does not work well on windows) 
              */
             if(touchEvent.Index < 2)
             {
