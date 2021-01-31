@@ -31,26 +31,41 @@ public class MultiTouch : Node2D
 {
     Label label1 = null;
     Label label2 = null;
+    Label label3 = null;
 
     Line2D line2D = new Line2D();
 
     // Only handle two finger touching the screen;
     Vector2[] touches = new Vector2[2];
+    Vector2[] touchesDrag = new Vector2[2];
     ColorRect[] colorRectFinger = new ColorRect[2];
+    ColorRect colorRect = null;
     int touchCounter = 0;
     float distanceTo = 0;
+    float distanceToLast = 0;
+
+    bool isDrag = false;
+
+    // filter out noise.
+    [Export]
+    float touchResolution = 2;
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {
         label1 = GetNode<Label>("Label1");
         label2 = GetNode<Label>("Label2");
-        
+        label3 = GetNode<Label>("Label3");
+        colorRect = GetNode<ColorRect>("ColorRect");
+
         label1.Text ="";
         label2.Text ="";
+        label3.Text ="";
         
         touches[0] = new Vector2();
         touches[1] = new Vector2();
+        touchesDrag[0] = new Vector2();
+        touchesDrag[1] = new Vector2();
   
         colorRectFinger[0] =  GetNode<ColorRect>("ColorRectFinger1");
         colorRectFinger[1] =  GetNode<ColorRect>("ColorRectFinger2");
@@ -64,11 +79,27 @@ public class MultiTouch : Node2D
         AddChildBelowNode(label1,line2D);
     }
 
+    public float zoom = 0;
+
+    public void CalculateZoom(bool zoomIn, float diff)
+    {
+        if(zoomIn)
+        {
+            zoom += 0.05f;
+        } else {
+            zoom -= 0.05f;
+        }
+
+        colorRect.RectScale = new Vector2(zoom, zoom);
+        label3.Text = "Zoom direction: " + ((zoomIn)?"IN":"OUT") + " : scale" + diff;
+    }
+
     // Handle inputs ( make sure settings emulate touch is set.)
     public override void _Input(InputEvent inputEvent)
     {
         if (inputEvent is InputEventScreenTouch touchEvent)
         {
+            isDrag = false;
             /*
              * Keep track of number touches that are active.
              */
@@ -90,8 +121,13 @@ public class MultiTouch : Node2D
             {
                 if(touchEvent.Pressed)
                 {
+                    distanceToLast = 0;
+        
                     touches[touchEvent.Index].x = touchEvent.Position.x;
                     touches[touchEvent.Index].y = touchEvent.Position.y;
+
+                    touchesDrag[touchEvent.Index].x = touchEvent.Position.x;
+                    touchesDrag[touchEvent.Index].y = touchEvent.Position.y;
                     
                     colorRectFinger[touchEvent.Index].SetPosition(
                         new Vector2(touches[touchEvent.Index].x - 50,
@@ -114,13 +150,15 @@ public class MultiTouch : Node2D
 
             if(grapEvent.Index < 2)
             {
-                touches[grapEvent.Index].x = grapEvent.Position.x;
-                touches[grapEvent.Index].y = grapEvent.Position.y;
+                touchesDrag[grapEvent.Index].x = grapEvent.Position.x;
+                touchesDrag[grapEvent.Index].y = grapEvent.Position.y;
 
                 colorRectFinger[grapEvent.Index].SetPosition(
                         new Vector2(grapEvent.Position.x - 50,
                                     grapEvent.Position.y - 50));
             }
+
+            isDrag = true;
         }
 
         /*
@@ -129,19 +167,55 @@ public class MultiTouch : Node2D
         */
         if(touchCounter == 2)
         {
-            line2D.Visible = true;
-            line2D.SetPointPosition(0, touches[0]);
-            line2D.SetPointPosition(1, touches[1]);
+            if(isDrag == true)
+            {
+                distanceTo = touchesDrag[0].DistanceTo(touchesDrag[1]);
+
+                line2D.DefaultColor = Colors.Red;
+              
+
+                if( distanceToLast != 0)
+                {
+                    float diff = (distanceTo - distanceToLast);
+                    bool zoomIn = false;
+
+                    // Only change zoom direction if its with in the touchResolution range
+                    if (Mathf.Abs(diff) > touchResolution)
+                    {
+                        if(distanceTo > distanceToLast) 
+                        {
+                            line2D.DefaultColor = Colors.Green;
+                            zoomIn = false;
+                        } else {
+                            line2D.DefaultColor = Colors.Blue;
+                            zoomIn = true;
+                        }
+
+                        CalculateZoom(zoomIn, diff); 
+                        
+                    }   
+
+                } else {
+                     label3.Text = "";
+                }
+     
+                distanceToLast = distanceTo;
+
+                line2D.Visible = true;
+                line2D.SetPointPosition(0, touchesDrag[0]);
+                line2D.SetPointPosition(1, touchesDrag[1]);
         
-            distanceTo = touches[0].DistanceTo( touches[1]);
+                Vector2 infoPos = (touchesDrag[0] + touchesDrag[1]) / 2;
 
-            Vector2 infoPos = (touches[0] + touches[1]) / 2;
-
-            label2.Visible = true;
-            label2.SetPosition(infoPos);
-            label2.Text = "Distance =" + distanceTo;
+                label2.Visible = true;
+                label2.SetPosition(infoPos);
+                label2.Text = "Distance =" + distanceTo;
+            } else {
+                label3.Text = "";
+            }
 
         } else {
+            label3.Text = "";
             label2.Visible = false;
             line2D.Visible = false;
         }
