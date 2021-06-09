@@ -25,6 +25,9 @@ using Godot;
 /*
  * Mobile device multi-touch
  * NOTE: Can't do multi touch on Windows 10, as it does not seem to work correct with Godot.
+ **
+ * 09/06/21
+ * Add rotation 
  */
 
 public class MultiTouch : Node2D
@@ -32,6 +35,7 @@ public class MultiTouch : Node2D
     Label label1 = null;
     Label label2 = null;
     Label label3 = null;
+    Label label4 = null;
 
     Line2D line2D = new Line2D();
 
@@ -41,11 +45,14 @@ public class MultiTouch : Node2D
     ColorRect[] colorRectFinger = new ColorRect[2];
     ColorRect colorRect = null;
     int touchCounter = 0;
-    float distanceTo = 0;
-    float distanceToLast = 0;
+
+    float distanceLast = 0;
+    float angleLast = 0;
 
     bool isDrag = false;
 
+    [Export]
+    bool enableRotation = false;
     // filter out noise.
     [Export]
     float touchResolution = 2;
@@ -60,11 +67,13 @@ public class MultiTouch : Node2D
         label1 = GetNode<Label>("Label1");
         label2 = GetNode<Label>("Label2");
         label3 = GetNode<Label>("Label3");
+        label4 = GetNode<Label>("Label4");
         colorRect = GetNode<ColorRect>("ColorRect");
 
         label1.Text ="";
         label2.Text ="";
         label3.Text ="";
+        label4.Text ="";
         
         touches[0] = new Vector2();
         touches[1] = new Vector2();
@@ -83,7 +92,7 @@ public class MultiTouch : Node2D
         AddChildBelowNode(label1,line2D);
     }
 
-    public void CalculateZoom(bool zoomIn, float diff)
+    public void UpdateScale(bool zoomIn, float diff)
     {
         float scale = 0;
         float zoomFactor = 0.02f;
@@ -101,6 +110,18 @@ public class MultiTouch : Node2D
         colorRect.RectScale = new Vector2(scale,scale);
 
         label3.Text = "Zoom direction: " + ((zoomIn)?"IN":"OUT") + " : scale" + vector;
+    }
+
+    public void UpdateRotation(float angle)
+    {
+        // Remember, you will always be rotatating around 
+        // where ever the pivot is located. 
+
+        float diff = (angle - angleLast);
+
+        colorRect.RectRotation = colorRect.RectRotation + diff;
+
+        label4.Text = "Degrees: " +  angle.ToString();
     }
 
     // Handle inputs ( make sure settings emulate touch is set.)
@@ -130,7 +151,8 @@ public class MultiTouch : Node2D
             {
                 if(touchEvent.Pressed)
                 {
-                    distanceToLast = 0;
+                    distanceLast = 0;
+                    angleLast = 0;
         
                     touches[touchEvent.Index].x = touchEvent.Position.x;
                     touches[touchEvent.Index].y = touchEvent.Position.y;
@@ -153,7 +175,7 @@ public class MultiTouch : Node2D
         else if (inputEvent is InputEventScreenDrag grapEvent)
         {
             /*
-             * Drag mean that the touch is still active, so just 
+             * Drag means that the touch is still active, so just 
              * update the position
              */
 
@@ -178,20 +200,31 @@ public class MultiTouch : Node2D
         {
             if(isDrag == true)
             {
-                distanceTo = touchesDrag[0].DistanceTo(touchesDrag[1]);
+                // Knowing the distance between two touches can be useful for some application.
+                float distance = touchesDrag[0].DistanceTo(touchesDrag[1]);
+                // ** Do what you will with this value.
+
+                // Knowing the center can be useful for some application.
+                Vector2 centerPos = (touchesDrag[0] + touchesDrag[1]) / 2;
+                // ** Do what you will with this value.
+
+                // Knowing the angle can be useful for some application.
+                float angle  = Mathf.Atan2(touchesDrag[0].y - touchesDrag[1].y , touchesDrag[0].x - touchesDrag[1].x) * 180 / Mathf.Pi;
+                // ** Do what you will with this value.
+
+                GD.Print("ANGLE + " + angle);
 
                 line2D.DefaultColor = Colors.Red;
               
-
-                if( distanceToLast != 0)
+                if( distanceLast != 0)
                 {
-                    float diff = (distanceTo - distanceToLast);
+                    float diff = (distance - distanceLast);
                     bool zoomIn = false;
 
                     // Only change zoom direction if its with in the touchResolution range
                     if (Mathf.Abs(diff) > touchResolution)
                     {
-                        if(distanceTo > distanceToLast) 
+                        if(distance > distanceLast) 
                         {
                             line2D.DefaultColor = Colors.Green;
                             zoomIn = false;
@@ -200,25 +233,34 @@ public class MultiTouch : Node2D
                             zoomIn = true;
                         }
 
-                        CalculateZoom(zoomIn, diff); 
+                        UpdateScale(zoomIn, diff); 
                         
                     }   
 
                 } else {
                      label3.Text = "";
                 }
+
+
+                // Use the rotation
+                if(angleLast != 0 && enableRotation)
+                {
+                    UpdateRotation(angle); 
+
+                } else {
+                     label4.Text = "";
+                }
      
-                distanceToLast = distanceTo;
+                distanceLast = distance;
+                angleLast = angle;
 
                 line2D.Visible = true;
                 line2D.SetPointPosition(0, touchesDrag[0]);
                 line2D.SetPointPosition(1, touchesDrag[1]);
-        
-                Vector2 infoPos = (touchesDrag[0] + touchesDrag[1]) / 2;
 
                 label2.Visible = true;
-                label2.SetPosition(infoPos);
-                label2.Text = "Distance =" + distanceTo;
+                label2.SetPosition(centerPos);
+                label2.Text = "Distance =" + distance;
             } else {
                 label3.Text = "";
             }
